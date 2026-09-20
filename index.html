@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leitor</title>
+<style>
+  html, body{
+    margin: 0; padding: 0; height: 100%;
+    background: #14120f;
+    overflow: hidden;
+  }
+  #cbzApp{
+    --bg: #14120f;
+    --bg-raised: #1c1a16;
+    --ink: #ece6d9;
+    --ink-dim: #a29c8d;
+    --line: #33302a;
+    --amber: #d98e3b;
+    --amber-dim: #8a5f2b;
+    --danger: #c0604a;
+    --font-ui: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+
+    height: 100vh;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-ui);
+  }
+  #cbzApp[data-theme="light"]{
+    --bg: #ece6d9;
+    --bg-raised: #ffffff;
+    --ink: #1c1a16;
+    --ink-dim: #6b6558;
+    --line: #d8d0bd;
+    --amber: #a8621f;
+    --amber-dim: #c98a44;
+  }
+
+  #cbzApp, #cbzApp *{ box-sizing: border-box; }
+  #cbzApp .cbz-hidden{ display:none !important; }
+  #cbzApp ::-webkit-scrollbar{ width: 8px; height: 8px; }
+  #cbzApp ::-webkit-scrollbar-track{ background: transparent; }
+  #cbzApp ::-webkit-scrollbar-thumb{ background: var(--line); border-radius: 4px; }
+
+  #cbzApp button{
+    font-family: var(--font-ui);
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--ink);
+    padding: 7px 12px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: border-color .15s ease, color .15s ease;
+  }
+  #cbzApp button:hover:not(:disabled){ border-color: var(--amber); color: var(--amber); }
+  #cbzApp button:disabled{ opacity:.35; cursor:default; }
+  #cbzApp .cbz-filebtn{
+    font-family: var(--font-ui);
+    background: var(--amber);
+    color: #14120f;
+    padding: 7px 14px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid var(--amber);
+    white-space: nowrap;
+    display: inline-block;
+  }
+  #cbzApp .cbz-filebtn:hover{ background: var(--amber-dim); border-color: var(--amber-dim); }
+  #cbzApp input[type="file"]{ display:none; }
+
+  /* ---------- topo ---------- */
+  #cbzApp .cbz-topbar{
+    display:flex; align-items:center; gap: 10px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--line);
+    background: var(--bg-raised);
+    flex-shrink:0;
+    flex-wrap: wrap;
+    z-index: 5;
+  }
+  #cbzApp .cbz-brand{
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    color: var(--amber);
+    white-space: nowrap;
+    font-weight: 600;
+  }
+  #cbzApp .cbz-filename{
+    flex: 1;
+    min-width: 40px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--ink-dim);
+    font-size: 12px;
+  }
+  #cbzApp .cbz-controls{ display:flex; gap:6px; align-items:center; flex-wrap: wrap; }
+  #cbzApp .cbz-zoomgroup{ display:flex; gap: 2px; }
+  #cbzApp .cbz-zoomgroup button{ padding: 7px 10px; }
+  #cbzApp #cbzBtnZoomReset{ min-width: 50px; text-align:center; }
+
+  /* ---------- tela inicial ---------- */
+  #cbzApp .cbz-dropzone{ flex:1; display:flex; align-items:center; justify-content:center; padding: 24px; }
+  #cbzApp .cbz-dropzone.cbz-hidden{ display:none; }
+  #cbzApp .cbz-dz-inner{
+    text-align:center; max-width: 400px; padding: 30px 24px;
+    border: 1px dashed var(--line); border-radius: 6px;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  #cbzApp .cbz-dz-inner.cbz-drag{ border-color: var(--amber); background: rgba(217,142,59,0.06); }
+  #cbzApp .cbz-dz-icon{ font-size: 34px; margin-bottom: 10px; color: var(--amber-dim); }
+  #cbzApp .cbz-dz-inner h1{ font-size: 17px; margin: 0 0 6px; font-weight: 600; color: var(--ink); }
+  #cbzApp .cbz-dz-inner p{ color: var(--ink-dim); font-size: 13px; line-height: 1.55; margin: 0 0 16px; }
+  #cbzApp .cbz-dz-inner .cbz-hint{ margin-top: 14px; font-size: 11px; color: var(--ink-dim); opacity: 0.75; }
+  #cbzApp #cbzErr{ margin-top: 12px; color: var(--danger); font-size: 12px; display:none; }
+
+  /* ---------- leitura ---------- */
+  #cbzApp .cbz-reader{ flex:1; position: relative; overflow: hidden; }
+  #cbzApp .cbz-reader.cbz-hidden{ display:none; }
+
+  #cbzApp .cbz-pagearea{
+    position: absolute; inset: 0;
+    display:flex; align-items:center; justify-content:center;
+    overflow: auto;
+    cursor: default;
+  }
+  #cbzApp .cbz-pagearea.cbz-fit-width{ align-items:flex-start; }
+  #cbzApp .cbz-pagearea.cbz-zoom-custom{ cursor: grab; justify-content:flex-start; align-items:flex-start; }
+  #cbzApp .cbz-pagearea.cbz-zoom-custom.cbz-panning{ cursor: grabbing; }
+
+  #cbzApp .cbz-pageframe{
+    display:flex; align-items:center; justify-content:center;
+    height: 100%; width: min(94%, 680px);
+  }
+  #cbzApp .cbz-pagearea.cbz-fit-width .cbz-pageframe{ height:auto; width:100%; max-width:680px; align-items:flex-start; }
+  #cbzApp .cbz-pagearea.cbz-zoom-custom .cbz-pageframe{ height:auto; width:auto; max-width:none; }
+
+  #cbzApp #cbzPageImg{
+    display:block; width: 100%; height: 100%; object-fit: contain;
+    box-shadow: 0 8px 26px rgba(0,0,0,0.4);
+    user-select: none; -webkit-user-drag: none;
+  }
+  #cbzApp .cbz-pagearea.cbz-fit-width #cbzPageImg{ height:auto; width:100%; margin: 0 auto; }
+  #cbzApp #cbzPageImg.cbz-zoom-custom{ width:auto; height:auto; margin:auto; }
+
+  #cbzApp .cbz-navzone{
+    position:absolute; top:0; bottom:0; width: 18%;
+    display:flex; align-items:center;
+    opacity: 0; transition: opacity .15s ease; cursor: pointer;
+  }
+  #cbzApp .cbz-navzone:hover{ opacity: 1; }
+  #cbzApp .cbz-navzone.cbz-left{ left:0; justify-content:flex-start; background: linear-gradient(to right, rgba(0,0,0,0.15), transparent); }
+  #cbzApp .cbz-navzone.cbz-right{ right:0; justify-content:flex-end; background: linear-gradient(to left, rgba(0,0,0,0.15), transparent); }
+  #cbzApp .cbz-navzone span{
+    font-size: 22px; color: #ece6d9; padding: 12px 8px;
+    background: rgba(20,18,15,0.55); border-radius: 3px; margin: 0 6px;
+  }
+
+  #cbzApp #cbzPageCounter{
+    position:absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+    background: rgba(20,18,15,0.75); color: #ece6d9;
+    padding: 4px 12px; border-radius: 20px; font-size: 11px;
+    letter-spacing: 0.03em; pointer-events:none;
+  }
+
+  /* ---------- rolagem contínua ---------- */
+  #cbzApp .cbz-scrollstrip{
+    display:none; flex-direction: column; align-items: center;
+    width: 100%; height: 100%; overflow-y: auto; overflow-x: auto;
+    padding: 0 0 30vh;
+  }
+  #cbzApp .cbz-scrollstrip.cbz-active{ display:flex; }
+  #cbzApp .cbz-scrollstrip.cbz-zoom-custom{ cursor: grab; align-items:flex-start; }
+  #cbzApp .cbz-scrollstrip.cbz-zoom-custom.cbz-panning{ cursor: grabbing; }
+  #cbzApp .cbz-scrollstrip img{ display:block; width: 100%; max-width: 680px; height: auto; user-select: none; -webkit-user-drag: none; }
+  #cbzApp .cbz-scrollstrip.cbz-zoom-custom img{ width: auto; max-width: none; }
+  #cbzApp .cbz-scroll-page{ width: 100%; max-width: 680px; display:flex; justify-content:center; }
+  #cbzApp .cbz-scroll-page.cbz-zoom-custom-page{ width: max-content; max-width: none; justify-content:flex-start; margin: 0 auto; }
+
+  /* ---------- miniaturas (flutua por cima, não empurra a página) ---------- */
+  #cbzApp .cbz-thumbs{
+    position: absolute; top: 0; right: 0; bottom: 0; width: 108px; z-index: 6;
+    background: var(--bg-raised); border-left: 1px solid var(--line);
+    box-shadow: -8px 0 20px rgba(0,0,0,0.35);
+    overflow-y: auto; padding: 8px 6px;
+  }
+  #cbzApp .cbz-thumbs.cbz-hidden{ display:none; }
+  #cbzApp .cbz-thumb{
+    position:relative; margin-bottom: 8px; border-radius: 3px; overflow:hidden;
+    cursor:pointer; border: 2px solid transparent; background: var(--bg);
+  }
+  #cbzApp .cbz-thumb img{ display:block; width:100%; height:auto; opacity: 0.75; }
+  #cbzApp .cbz-thumb.cbz-active{ border-color: var(--amber); }
+  #cbzApp .cbz-thumb.cbz-active img{ opacity: 1; }
+  #cbzApp .cbz-thumb .cbz-num{
+    position:absolute; bottom:2px; right:4px; font-size: 9px; color:#fff;
+    background: rgba(0,0,0,0.55); padding: 1px 4px; border-radius: 8px;
+  }
+
+  /* ---------- carregando ---------- */
+  #cbzApp .cbz-loading{
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; background: var(--bg);
+    gap: 12px; z-index: 10;
+  }
+  #cbzApp .cbz-loading.cbz-hidden{ display:none; }
+  #cbzApp .cbz-spinner{
+    width: 26px; height: 26px; border: 3px solid var(--line);
+    border-top-color: var(--amber); border-radius: 50%;
+    animation: cbz-spin 0.8s linear infinite;
+  }
+  @keyframes cbz-spin{ to{ transform: rotate(360deg); } }
+  #cbzApp .cbz-loading p{ color: var(--ink-dim); font-size: 12px; }
+
+  #cbzApp:fullscreen{ background: var(--bg); max-width:none; height:100vh; border-radius:0; margin:0; }
+  #cbzApp:-webkit-full-screen{ background: var(--bg); max-width:none; height:100vh; border-radius:0; margin:0; }
+
+  @media (max-width: 560px){
+    #cbzApp .cbz-thumbs{ display:none !important; }
+    #cbzApp .cbz-topbar{ gap: 6px; padding: 6px 8px; }
+    #cbzApp .cbz-navzone span{ font-size: 18px; padding: 8px 5px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="cbzApp">
+
+  <div class="cbz-topbar">
+    <div class="cbz-brand">Leitor</div>
+    <div class="cbz-filename" id="cbzFilenameLabel"></div>
+    <div class="cbz-controls" id="cbzReaderControls" style="display:none;">
+      <button id="cbzBtnPrev" title="Página anterior (esquerda)">&#8249;</button>
+      <button id="cbzBtnNext" title="Próxima página (direita)">&#8250;</button>
+      <button id="cbzBtnFit" title="Alternar ajuste: altura/largura" disabled>Ajustar: altura</button>
+      <span class="cbz-zoomgroup">
+        <button id="cbzBtnZoomOut" title="Diminuir zoom (-)">-</button>
+        <button id="cbzBtnZoomReset" title="Zoom real / redefinir ajuste (0)">Ajuste</button>
+        <button id="cbzBtnZoomIn" title="Aumentar zoom (+)">+</button>
+      </span>
+      <button id="cbzBtnScroll" title="Alternar modo de rolagem contínua">Modo: rolagem</button>
+      <button id="cbzBtnThumbs" title="Mostrar/ocultar miniaturas">Miniaturas</button>
+      <button id="cbzBtnFullscreen" title="Tela cheia (Enter)">&#9974;</button>
+      <button id="cbzBtnClose" title="Fechar arquivo">Fechar</button>
+    </div>
+    <label class="cbz-filebtn cbz-hidden" for="cbzFileInput" id="cbzOpenLabel">Abrir arquivo</label>
+    <input type="file" id="cbzFileInput" accept=".cbz,.zip,application/zip,application/x-cbz">
+    <button id="cbzBtnTheme" title="Alternar tema claro/escuro" style="padding: 6px 9px; line-height:0;">
+      <svg id="cbzIconMoon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+      <svg id="cbzIconSun" class="cbz-hidden" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+    </button>
+  </div>
+
+  <div class="cbz-dropzone" id="cbzDropzone">
+    <div class="cbz-dz-inner" id="cbzDzInner">
+      <div class="cbz-dz-icon">&#128214;</div>
+      <h1>Solte um arquivo aqui</h1>
+      <p>Ou clique no botão abaixo. O arquivo é lido inteiramente no seu navegador — nada é enviado para nenhum servidor.</p>
+      <label class="cbz-filebtn" for="cbzFileInput">Escolher arquivo</label>
+      <div class="cbz-hint">São arquivos ZIP com imagens dentro — as páginas são extraídas e ordenadas automaticamente.</div>
+      <div id="cbzErr"></div>
+    </div>
+  </div>
+
+  <div class="cbz-reader cbz-hidden" id="cbzReader">
+    <div class="cbz-pagearea" id="cbzPageArea">
+      <div class="cbz-navzone cbz-left" id="cbzZoneLeft"><span>&#8249;</span></div>
+      <div class="cbz-pageframe" id="cbzPageFrame">
+        <img id="cbzPageImg" alt="Página do quadrinho">
+      </div>
+      <div class="cbz-navzone cbz-right" id="cbzZoneRight"><span>&#8250;</span></div>
+      <div class="cbz-scrollstrip" id="cbzScrollStrip"></div>
+      <div id="cbzPageCounter">– / –</div>
+    </div>
+    <div class="cbz-thumbs cbz-hidden" id="cbzThumbs"></div>
+    <div class="cbz-loading cbz-hidden" id="cbzLoading">
+      <div class="cbz-spinner"></div>
+      <p>Extraindo páginas…</p>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  const appRoot = document.getElementById('cbzApp');
+  const fileInput = document.getElementById('cbzFileInput');
+  const dropzone = document.getElementById('cbzDropzone');
+  const dzInner = document.getElementById('cbzDzInner');
+  const errBox = document.getElementById('cbzErr');
+  const reader = document.getElementById('cbzReader');
+  const pageArea = document.getElementById('cbzPageArea');
+  const pageFrame = document.getElementById('cbzPageFrame');
+  const pageImg = document.getElementById('cbzPageImg');
+  const scrollStrip = document.getElementById('cbzScrollStrip');
+  const pageCounter = document.getElementById('cbzPageCounter');
+  const thumbsEl = document.getElementById('cbzThumbs');
+  const loadingEl = document.getElementById('cbzLoading');
+  const filenameLabel = document.getElementById('cbzFilenameLabel');
+  const readerControls = document.getElementById('cbzReaderControls');
+  const openLabel = document.getElementById('cbzOpenLabel');
+  const btnTheme = document.getElementById('cbzBtnTheme');
+  const iconMoon = document.getElementById('cbzIconMoon');
+  const iconSun = document.getElementById('cbzIconSun');
+
+  const btnPrev = document.getElementById('cbzBtnPrev');
+  const btnNext = document.getElementById('cbzBtnNext');
+  const btnFit = document.getElementById('cbzBtnFit');
+  const btnZoomOut = document.getElementById('cbzBtnZoomOut');
+  const btnZoomIn = document.getElementById('cbzBtnZoomIn');
+  const btnZoomReset = document.getElementById('cbzBtnZoomReset');
+  const btnScroll = document.getElementById('cbzBtnScroll');
+  const btnThumbs = document.getElementById('cbzBtnThumbs');
+  const btnFullscreen = document.getElementById('cbzBtnFullscreen');
+  const btnClose = document.getElementById('cbzBtnClose');
+  const zoneLeft = document.getElementById('cbzZoneLeft');
+  const zoneRight = document.getElementById('cbzZoneRight');
+
+  let pages = [];
+  let currentIndex = 0;
+  let objectUrls = [];
+
+  // Modo de rolagem contínua é o padrão desta versão.
+  let scrollMode = true;
+  let scrollObserver = null;
+
+  let viewMode = 'fit';   // 'fit' | 'custom'
+  let fitMode = 'height'; // 'height' | 'width' (só usado no modo página)
+  let zoomPercent = 100;
+  const ZOOM_MIN = 25, ZOOM_MAX = 400, ZOOM_STEP = 15;
+
+  let isPanning = false;
+  let panEl = null, panStartX = 0, panStartY = 0, panScrollX = 0, panScrollY = 0;
+
+  const IMAGE_RE = /\.(jpe?g|png|gif|webp|bmp|avif)$/i;
+  const CBZ_NAME_RE = /\.(cbz|zip)$/i;
+
+  function naturalCompare(a, b){
+    const ax = [], bx = [];
+    a.replace(/(\d+)|(\D+)/g, (_, d, s) => { ax.push([d ? parseInt(d,10) : Infinity, s || ""]); return ""; });
+    b.replace(/(\d+)|(\D+)/g, (_, d, s) => { bx.push([d ? parseInt(d,10) : Infinity, s || ""]); return ""; });
+    while (ax.length && bx.length) {
+      const an = ax.shift(), bn = bx.shift();
+      const nn = (an[0] - bn[0]) || an[1].localeCompare(bn[1]);
+      if (nn) return nn;
+    }
+    return ax.length - bx.length;
+  }
+
+  function showError(msg){ errBox.textContent = msg; errBox.style.display = 'block'; }
+  function clearError(){ errBox.style.display = 'none'; errBox.textContent = ''; }
+
+  async function processZipBuffer(buffer, displayName){
+    viewMode = 'fit';
+    fitMode = 'height';
+    zoomPercent = 100;
+
+    const zip = await JSZip.loadAsync(buffer);
+    const entries = [];
+    zip.forEach((relPath, entry) => {
+      if (!entry.dir && IMAGE_RE.test(relPath) && !relPath.startsWith('__MACOSX')) entries.push(entry);
+    });
+    if (entries.length === 0) throw new Error('Nenhuma imagem foi encontrada dentro deste arquivo.');
+    entries.sort((a, b) => naturalCompare(a.name, b.name));
+
+    revokeUrls();
+    pages = [];
+    for (const entry of entries) {
+      const blob = await entry.async('blob');
+      const url = URL.createObjectURL(blob);
+      objectUrls.push(url);
+      pages.push({ name: entry.name, url });
+    }
+
+    filenameLabel.textContent = displayName + '  -  ' + pages.length + ' página' + (pages.length !== 1 ? 's' : '');
+    readerControls.style.display = 'flex';
+    openLabel.textContent = 'Trocar arquivo';
+    openLabel.classList.remove('cbz-hidden');
+
+    buildThumbs();
+    buildScrollStrip();
+
+    // Sempre abre no modo de rolagem contínua.
+    scrollMode = false; // força toggleScrollMode a ligar o modo rolagem abaixo
+    applyScrollModeState(true);
+    goToPage(0);
+  }
+
+  async function handleFile(file){
+    if (!file) return;
+    clearError();
+    if (!CBZ_NAME_RE.test(file.name)) {
+      showError('Escolha um arquivo compatível (.cbz ou .zip com imagens dentro).');
+      return;
+    }
+    dropzone.classList.add('cbz-hidden');
+    reader.classList.remove('cbz-hidden');
+    loadingEl.classList.remove('cbz-hidden');
+    try {
+      const buffer = await file.arrayBuffer();
+      await processZipBuffer(buffer, file.name);
+    } catch (e) {
+      console.error(e);
+      reader.classList.add('cbz-hidden');
+      dropzone.classList.remove('cbz-hidden');
+      showError('Não foi possível abrir este arquivo: ' + (e.message || 'formato inválido.'));
+    } finally {
+      loadingEl.classList.add('cbz-hidden');
+    }
+  }
+
+  function revokeUrls(){
+    objectUrls.forEach(u => URL.revokeObjectURL(u));
+    objectUrls = [];
+  }
+
+  function buildThumbs(){
+    thumbsEl.innerHTML = '';
+    pages.forEach((p, i) => {
+      const div = document.createElement('div');
+      div.className = 'cbz-thumb';
+      div.dataset.index = i;
+      const img = document.createElement('img');
+      img.src = p.url;
+      img.loading = 'lazy';
+      img.alt = 'Miniatura da página ' + (i + 1);
+      const num = document.createElement('div');
+      num.className = 'cbz-num';
+      num.textContent = (i + 1);
+      div.appendChild(img);
+      div.appendChild(num);
+      div.addEventListener('click', () => goToPage(i));
+      thumbsEl.appendChild(div);
+    });
+  }
+
+  function buildScrollStrip(){
+    scrollObserver && scrollObserver.disconnect();
+    scrollStrip.innerHTML = '';
+    pages.forEach((p, i) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'cbz-scroll-page';
+      wrap.dataset.index = i;
+      const img = document.createElement('img');
+      img.src = p.url;
+      img.loading = 'lazy';
+      img.alt = 'Página ' + (i + 1);
+      wrap.appendChild(img);
+      scrollStrip.appendChild(wrap);
+    });
+
+    scrollObserver = new IntersectionObserver((entries) => {
+      let best = null;
+      entries.forEach(entry => {
+        if (entry.isIntersecting) { if (!best || entry.intersectionRatio > best.intersectionRatio) best = entry; }
+      });
+      if (best) updateIndicators(parseInt(best.target.dataset.index, 10));
+    }, { root: scrollStrip, threshold: [0.25, 0.5, 0.75] });
+
+    scrollStrip.querySelectorAll('.cbz-scroll-page').forEach(el => scrollObserver.observe(el));
+    applyScrollZoom();
+  }
+
+  function updateIndicators(i){
+    currentIndex = i;
+    pageCounter.textContent = (currentIndex + 1) + ' / ' + pages.length;
+    btnPrev.disabled = currentIndex === 0;
+    btnNext.disabled = currentIndex === pages.length - 1;
+
+    const activeThumb = thumbsEl.querySelector('.cbz-thumb.cbz-active');
+    if (activeThumb) activeThumb.classList.remove('cbz-active');
+    const newThumb = thumbsEl.querySelector('.cbz-thumb[data-index="' + currentIndex + '"]');
+    if (newThumb) { newThumb.classList.add('cbz-active'); newThumb.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+  }
+
+  function goToPage(i){
+    if (pages.length === 0) return;
+    const idx = Math.max(0, Math.min(pages.length - 1, i));
+    if (scrollMode) {
+      const target = scrollStrip.querySelector('.cbz-scroll-page[data-index="' + idx + '"]');
+      if (target) target.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      updateIndicators(idx);
+    } else {
+      currentIndex = idx;
+      pageImg.src = pages[currentIndex].url;
+      updateIndicators(idx);
+      pageArea.scrollTop = 0;
+      applyPageZoom();
+    }
+  }
+
+  function nextPage(){ goToPage(currentIndex + 1); }
+  function prevPage(){ goToPage(currentIndex - 1); }
+
+  function toggleFit(){
+    if (scrollMode) return;
+    if (viewMode === 'fit') fitMode = fitMode === 'height' ? 'width' : 'height';
+    else viewMode = 'fit';
+    refreshZoom();
+  }
+
+  // ---------- Zoom ----------
+  function setImgRealSize(img, percent){
+    if (!img || !img.naturalWidth) return;
+    img.style.width = Math.round(img.naturalWidth * percent / 100) + 'px';
+    img.style.height = 'auto';
+  }
+
+  function applyPageZoom(){
+    if (viewMode === 'custom') {
+      pageArea.classList.remove('cbz-fit-width');
+      pageArea.classList.add('cbz-zoom-custom');
+      pageImg.classList.add('cbz-zoom-custom');
+      const apply = () => { if (viewMode === 'custom') setImgRealSize(pageImg, zoomPercent); };
+      if (pageImg.complete && pageImg.naturalWidth) apply(); else pageImg.onload = apply;
+    } else {
+      pageImg.onload = null;
+      pageArea.classList.remove('cbz-zoom-custom');
+      pageImg.classList.remove('cbz-zoom-custom');
+      pageImg.style.width = ''; pageImg.style.height = '';
+      pageArea.classList.toggle('cbz-fit-width', fitMode === 'width');
+    }
+  }
+
+  function applyScrollZoom(){
+    const imgs = scrollStrip.querySelectorAll('img');
+    if (viewMode === 'custom') {
+      scrollStrip.classList.add('cbz-zoom-custom');
+      imgs.forEach(img => {
+        const apply = () => { if (viewMode === 'custom') setImgRealSize(img, zoomPercent); };
+        if (img.complete && img.naturalWidth) apply(); else img.onload = apply;
+      });
+    } else {
+      scrollStrip.classList.remove('cbz-zoom-custom');
+      imgs.forEach(img => { img.onload = null; img.style.width = ''; img.style.height = ''; });
+    }
+  }
+
+  function updateZoomUI(){
+    btnFit.textContent = fitMode === 'height' ? 'Ajustar: altura' : 'Ajustar: largura';
+    btnFit.disabled = scrollMode;
+    btnZoomReset.textContent = viewMode === 'custom' ? zoomPercent + '%' : 'Ajuste';
+    btnZoomOut.disabled = viewMode === 'custom' && zoomPercent <= ZOOM_MIN;
+    btnZoomIn.disabled = viewMode === 'custom' && zoomPercent >= ZOOM_MAX;
+  }
+
+  function refreshZoom(){ applyPageZoom(); applyScrollZoom(); updateZoomUI(); }
+
+  function zoomIn(){
+    if (viewMode !== 'custom') { viewMode = 'custom'; zoomPercent = 100; }
+    zoomPercent = Math.min(ZOOM_MAX, zoomPercent + ZOOM_STEP);
+    refreshZoom();
+  }
+  function zoomOut(){
+    if (viewMode !== 'custom') { viewMode = 'custom'; zoomPercent = 100; }
+    zoomPercent = Math.max(ZOOM_MIN, zoomPercent - ZOOM_STEP);
+    refreshZoom();
+  }
+  function resetZoom(){ viewMode = 'fit'; refreshZoom(); }
+
+  function startPan(el, e){
+    if (viewMode !== 'custom') return;
+    if (e.button !== 0) return;
+    isPanning = true; panEl = el;
+    panStartX = e.pageX; panStartY = e.pageY;
+    panScrollX = el.scrollLeft; panScrollY = el.scrollTop;
+    el.classList.add('cbz-panning');
+    e.preventDefault();
+  }
+  window.addEventListener('mousemove', (e) => {
+    if (!isPanning || !panEl) return;
+    panEl.scrollLeft = panScrollX - (e.pageX - panStartX);
+    panEl.scrollTop = panScrollY - (e.pageY - panStartY);
+  });
+  window.addEventListener('mouseup', () => {
+    if (isPanning && panEl) panEl.classList.remove('cbz-panning');
+    isPanning = false; panEl = null;
+  });
+  pageImg.addEventListener('mousedown', (e) => startPan(pageArea, e));
+  scrollStrip.addEventListener('mousedown', (e) => { if (e.target.tagName === 'IMG') startPan(scrollStrip, e); });
+
+  function handleZoomWheel(e){
+    if (!(e.ctrlKey || e.metaKey)) return;
+    e.preventDefault();
+    if (e.deltaY < 0) zoomIn(); else zoomOut();
+  }
+  pageArea.addEventListener('wheel', handleZoomWheel, { passive: false });
+  scrollStrip.addEventListener('wheel', handleZoomWheel, { passive: false });
+
+  // ---------- Modo de rolagem ----------
+  function applyScrollModeState(active){
+    scrollMode = active;
+    scrollStrip.classList.toggle('cbz-active', scrollMode);
+    pageFrame.style.display = scrollMode ? 'none' : '';
+    zoneLeft.style.display = scrollMode ? 'none' : '';
+    zoneRight.style.display = scrollMode ? 'none' : '';
+    btnScroll.textContent = scrollMode ? 'Modo: rolagem' : 'Modo: página';
+    refreshZoom();
+  }
+  function toggleScrollMode(){
+    applyScrollModeState(!scrollMode);
+    goToPage(currentIndex);
+  }
+
+  function toggleThumbs(){ thumbsEl.classList.toggle('cbz-hidden'); }
+
+  function closeBook(){
+    revokeUrls();
+    scrollObserver && scrollObserver.disconnect();
+    scrollStrip.innerHTML = '';
+    pages = [];
+    currentIndex = 0;
+    viewMode = 'fit'; fitMode = 'height'; zoomPercent = 100;
+    reader.classList.add('cbz-hidden');
+    dropzone.classList.remove('cbz-hidden');
+    readerControls.style.display = 'none';
+    openLabel.textContent = 'Abrir arquivo';
+    openLabel.classList.add('cbz-hidden');
+    filenameLabel.textContent = '';
+    fileInput.value = '';
+  }
+
+  function toggleFullscreen(){
+    const isFs = document.fullscreenElement || document.webkitFullscreenElement;
+    if (!isFs) {
+      const req = appRoot.requestFullscreen || appRoot.webkitRequestFullscreen;
+      if (req) req.call(appRoot);
+    } else {
+      const exit = document.exitFullscreen || document.webkitExitFullscreen;
+      if (exit) exit.call(document);
+    }
+  }
+  function updateFullscreenButton(){
+    const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+    btnFullscreen.title = isFs ? 'Sair da tela cheia (Esc)' : 'Tela cheia (Enter)';
+  }
+  document.addEventListener('fullscreenchange', updateFullscreenButton);
+  document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
+
+  // ---------- Eventos ----------
+  let wasFullscreenBeforePicker = false;
+  openLabel.addEventListener('click', () => {
+    wasFullscreenBeforePicker = !!(document.fullscreenElement || document.webkitFullscreenElement);
+  });
+  fileInput.addEventListener('change', (e) => {
+    handleFile(e.target.files[0]);
+    // O navegador costuma sair da tela cheia sozinho ao abrir o seletor
+    // nativo de arquivos. Se estávamos em tela cheia antes, volta pra ela.
+    if (wasFullscreenBeforePicker && !(document.fullscreenElement || document.webkitFullscreenElement)) {
+      const req = appRoot.requestFullscreen || appRoot.webkitRequestFullscreen;
+      if (req) req.call(appRoot).catch(() => {});
+    }
+  });
+
+  ['dragenter', 'dragover'].forEach(evt => {
+    dzInner.addEventListener(evt, (e) => { e.preventDefault(); e.stopPropagation(); dzInner.classList.add('cbz-drag'); });
+  });
+  ['dragleave', 'drop'].forEach(evt => {
+    dzInner.addEventListener(evt, (e) => { e.preventDefault(); e.stopPropagation(); dzInner.classList.remove('cbz-drag'); });
+  });
+  dzInner.addEventListener('drop', (e) => handleFile(e.dataTransfer.files[0]));
+
+  appRoot.addEventListener('dragover', (e) => e.preventDefault());
+  appRoot.addEventListener('drop', (e) => {
+    if (e.target.closest('#cbzDzInner')) return;
+    e.preventDefault();
+    const file = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  });
+
+  btnPrev.addEventListener('click', prevPage);
+  btnNext.addEventListener('click', nextPage);
+  btnFit.addEventListener('click', toggleFit);
+  btnZoomIn.addEventListener('click', zoomIn);
+  btnZoomOut.addEventListener('click', zoomOut);
+  btnZoomReset.addEventListener('click', resetZoom);
+  btnScroll.addEventListener('click', toggleScrollMode);
+  btnThumbs.addEventListener('click', toggleThumbs);
+  btnClose.addEventListener('click', closeBook);
+  btnFullscreen.addEventListener('click', toggleFullscreen);
+  zoneLeft.addEventListener('click', prevPage);
+  zoneRight.addEventListener('click', nextPage);
+  pageArea.addEventListener('dblclick', toggleFullscreen);
+
+  document.addEventListener('keydown', (e) => {
+    if (reader.classList.contains('cbz-hidden')) return;
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextPage(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); prevPage(); }
+    else if (e.key === 'f' || e.key === 'F') { toggleFit(); }
+    else if (e.key === 'Escape') { if (!(document.fullscreenElement || document.webkitFullscreenElement)) closeBook(); }
+    else if (e.key === 't' || e.key === 'T') { toggleThumbs(); }
+    else if (e.key === 's' || e.key === 'S') { toggleScrollMode(); }
+    else if (e.key === 'd' || e.key === 'D') { btnTheme.click(); }
+    else if (e.key === 'Enter') { toggleFullscreen(); }
+    else if (e.key === '+' || e.key === '=') { zoomIn(); }
+    else if (e.key === '-' || e.key === '_') { zoomOut(); }
+    else if (e.key === '0') { resetZoom(); }
+  });
+
+  // ---------- Tema claro/escuro ----------
+  function applyTheme(theme){
+    appRoot.setAttribute('data-theme', theme);
+    iconMoon.classList.toggle('cbz-hidden', theme !== 'dark');
+    iconSun.classList.toggle('cbz-hidden', theme === 'dark');
+    btnTheme.title = theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro';
+    try { localStorage.setItem('cbzTheme', theme); } catch (e) {}
+  }
+  function initTheme(){
+    let saved = null;
+    try { saved = localStorage.getItem('cbzTheme'); } catch (e) {}
+    applyTheme(saved === 'light' ? 'light' : 'dark');
+  }
+  btnTheme.addEventListener('click', () => {
+    const current = appRoot.getAttribute('data-theme');
+    applyTheme(current === 'dark' ? 'light' : 'dark');
+  });
+
+  initTheme();
+  updateZoomUI();
+})();
+</script>
+</body>
+</html>
