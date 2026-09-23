@@ -81,6 +81,18 @@
   }
   #cbzApp .cbz-filebtn:hover{ background: var(--amber-dim); border-color: var(--amber-dim); }
   #cbzApp input[type="file"]{ display:none; }
+  #cbzApp .cbz-filebtn-secondary{
+    font-family: var(--font-ui);
+    background: transparent;
+    color: var(--ink);
+    padding: 7px 14px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 13px;
+    border: 1px solid var(--line);
+  }
+  #cbzApp .cbz-filebtn-secondary:hover{ border-color: var(--amber); color: var(--amber); }
+  #cbzApp .cbz-dz-buttons{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom: 0; }
 
   /* ---------- topo ---------- */
   #cbzApp .cbz-topbar{
@@ -229,6 +241,58 @@
   #cbzApp:fullscreen{ background: var(--bg); max-width:none; height:100vh; border-radius:0; margin:0; }
   #cbzApp:-webkit-full-screen{ background: var(--bg); max-width:none; height:100vh; border-radius:0; margin:0; }
 
+  /* ---------- biblioteca ---------- */
+  #cbzApp .cbz-modal-overlay{
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.6);
+    display:flex; align-items:center; justify-content:center;
+    z-index: 50; padding: 20px;
+  }
+  #cbzApp .cbz-modal-overlay.cbz-hidden{ display:none; }
+  #cbzApp .cbz-modal-box{
+    background: var(--bg-raised); border: 1px solid var(--line); border-radius: 6px;
+    padding: 20px 22px; max-width: 640px; width: 100%; max-height: 84%;
+    display:flex; flex-direction:column;
+  }
+  #cbzApp .cbz-modal-header{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  #cbzApp .cbz-modal-header h2{ margin:0; font-size:17px; color: var(--amber); }
+  #cbzApp .cbz-modal-x{ border:none; background:none; font-size:16px; padding:4px 8px; }
+  #cbzApp .cbz-modal-desc{ font-size:12px; color: var(--ink-dim); line-height:1.55; margin: 8px 0 14px; }
+  #cbzApp .cbz-library-toolbar{ display:flex; gap:8px; margin: 0 0 14px; flex-wrap:wrap; }
+  #cbzApp .cbz-btn-danger{ border-color: var(--danger); color: var(--danger); }
+  #cbzApp .cbz-btn-danger:hover{ background: var(--danger); color: #fff; }
+  #cbzApp .cbz-library-actions{ display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap; }
+  #cbzApp .cbz-danger-btn:hover{ border-color: var(--danger); color: var(--danger); }
+  #cbzApp .cbz-library-empty{ font-size:13px; color: var(--ink-dim); text-align:center; padding: 30px 10px; }
+  #cbzApp .cbz-library-empty.cbz-hidden{ display:none; }
+  #cbzApp .cbz-library-list{
+    display:flex; flex-direction:column; gap: 5px; overflow-y:auto; padding: 2px;
+  }
+  #cbzApp .cbz-library-row{
+    display:flex; align-items:center; gap: 9px;
+    background: var(--bg); border: 1px solid var(--line); border-radius: 4px;
+    padding: 5px 8px; cursor:pointer; transition: border-color .15s ease;
+  }
+  #cbzApp .cbz-library-row:hover{ border-color: var(--amber-dim); }
+  #cbzApp .cbz-library-row.cbz-library-current{ border-color: var(--amber); }
+  #cbzApp .cbz-library-row.cbz-dragover{ border-color: var(--amber); border-style: dashed; }
+  #cbzApp .cbz-library-row-index{ width:26px; text-align:right; color:var(--ink-dim); font-size:11px; flex-shrink:0; }
+  #cbzApp .cbz-library-row-cover{
+    width:32px; height:44px; object-fit:cover; border-radius:2px; flex-shrink:0; background: var(--bg-raised);
+  }
+  #cbzApp .cbz-library-row-info{ flex:1; min-width:0; }
+  #cbzApp .cbz-library-row-title{
+    font-size: 12px; color: var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  #cbzApp .cbz-library-row-meta{ font-size: 10px; color: var(--ink-dim); margin-top: 1px; }
+  #cbzApp .cbz-library-row-remove{
+    flex-shrink:0; width:22px; height:22px; padding:0;
+    border-radius: 50%; background: none; border: 1px solid var(--line); color: var(--ink-dim);
+    font-size: 12px; line-height:1; display:flex; align-items:center; justify-content:center;
+  }
+  #cbzApp .cbz-library-row-remove:hover{ background: var(--danger); color:#fff; border-color:transparent; }
+  #cbzApp .cbz-library-row-handle{ flex-shrink:0; color: var(--ink-dim); cursor: grab; font-size: 14px; padding: 0 2px; }
+
   @media (max-width: 560px){
     #cbzApp .cbz-thumbs{ display:none !important; }
     #cbzApp .cbz-topbar{ gap: 6px; padding: 6px 8px; }
@@ -254,11 +318,15 @@
       </span>
       <button id="cbzBtnScroll" title="Alternar modo de rolagem contínua">Modo: rolagem</button>
       <button id="cbzBtnThumbs" title="Mostrar/ocultar miniaturas">Miniaturas</button>
+      <button id="cbzBtnPlaylistPrev" title="Quadrinho anterior da lista">&#8592; Anterior</button>
+      <button id="cbzBtnPlaylistNext" title="Próximo quadrinho da lista">Próximo &#8594;</button>
+      <button id="cbzBtnAutoAdvance" title="Avançar automaticamente pro próximo da lista ao terminar">Auto: ligado</button>
       <button id="cbzBtnFullscreen" title="Tela cheia (Enter)">&#9974;</button>
       <button id="cbzBtnClose" title="Fechar arquivo">Fechar</button>
     </div>
+    <button id="cbzBtnLibrary" title="Sua biblioteca salva neste navegador">Biblioteca</button>
     <label class="cbz-filebtn cbz-hidden" for="cbzFileInput" id="cbzOpenLabel">Abrir arquivo</label>
-    <input type="file" id="cbzFileInput" accept=".cbz,.zip,application/zip,application/x-cbz">
+    <input type="file" id="cbzFileInput" accept=".cbz,.zip,application/zip,application/x-cbz" multiple>
     <button id="cbzBtnTheme" title="Alternar tema claro/escuro" style="padding: 6px 9px; line-height:0;">
       <svg id="cbzIconMoon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
       <svg id="cbzIconSun" class="cbz-hidden" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
@@ -270,9 +338,32 @@
       <div class="cbz-dz-icon">&#128214;</div>
       <h1>Solte um arquivo aqui</h1>
       <p>Ou clique no botão abaixo. O arquivo é lido inteiramente no seu navegador — nada é enviado para nenhum servidor.</p>
-      <label class="cbz-filebtn" for="cbzFileInput">Escolher arquivo</label>
+      <div class="cbz-dz-buttons">
+        <label class="cbz-filebtn" for="cbzFileInput">Escolher arquivo</label>
+        <button id="cbzBtnLibraryDz" class="cbz-filebtn-secondary">Ver biblioteca</button>
+      </div>
       <div class="cbz-hint">São arquivos ZIP com imagens dentro — as páginas são extraídas e ordenadas automaticamente.</div>
       <div id="cbzErr"></div>
+    </div>
+  </div>
+
+  <div class="cbz-modal-overlay cbz-hidden" id="cbzLibraryModal">
+    <div class="cbz-modal-box">
+      <div class="cbz-modal-header">
+        <h2>Biblioteca</h2>
+        <button id="cbzLibraryClose" class="cbz-modal-x" title="Fechar">&#10005;</button>
+      </div>
+      <p class="cbz-modal-desc">Os arquivos abertos aqui ficam salvos automaticamente neste navegador — não precisa reenviar toda vez. Arraste os itens para reordenar sua lista de leitura. Isso fica só neste dispositivo/navegador: limpar os dados do navegador apaga a biblioteca.</p>
+      <div class="cbz-library-toolbar">
+        <button id="cbzBtnLibrarySort" title="Reordenar todos os itens pelo nome, em ordem numérica correta">Ordenar</button>
+        <button id="cbzBtnLibraryClear" class="cbz-btn-danger" title="Remover todos os arquivos salvos">Limpar</button>
+      </div>
+      <div class="cbz-library-actions">
+        <button id="cbzLibrarySort" class="cbz-filebtn-secondary">Ordenar por nome</button>
+        <button id="cbzLibraryClear" class="cbz-filebtn-secondary cbz-danger-btn">Limpar biblioteca</button>
+      </div>
+      <div id="cbzLibraryEmpty" class="cbz-library-empty">Sua biblioteca está vazia. Abra um arquivo pra começar.</div>
+      <div id="cbzLibraryGrid" class="cbz-library-list"></div>
     </div>
   </div>
 
@@ -289,7 +380,7 @@
     <div class="cbz-thumbs cbz-hidden" id="cbzThumbs"></div>
     <div class="cbz-loading cbz-hidden" id="cbzLoading">
       <div class="cbz-spinner"></div>
-      <p>Extraindo páginas…</p>
+      <p id="cbzLoadingText">Extraindo páginas…</p>
     </div>
   </div>
 
@@ -313,6 +404,7 @@
   const pageCounter = document.getElementById('cbzPageCounter');
   const thumbsEl = document.getElementById('cbzThumbs');
   const loadingEl = document.getElementById('cbzLoading');
+  const loadingText = document.getElementById('cbzLoadingText');
   const filenameLabel = document.getElementById('cbzFilenameLabel');
   const readerControls = document.getElementById('cbzReaderControls');
   const openLabel = document.getElementById('cbzOpenLabel');
@@ -332,6 +424,17 @@
   const btnClose = document.getElementById('cbzBtnClose');
   const zoneLeft = document.getElementById('cbzZoneLeft');
   const zoneRight = document.getElementById('cbzZoneRight');
+  const btnLibrary = document.getElementById('cbzBtnLibrary');
+  const btnLibraryDz = document.getElementById('cbzBtnLibraryDz');
+  const btnPlaylistPrev = document.getElementById('cbzBtnPlaylistPrev');
+  const btnPlaylistNext = document.getElementById('cbzBtnPlaylistNext');
+  const btnAutoAdvance = document.getElementById('cbzBtnAutoAdvance');
+  const libraryModal = document.getElementById('cbzLibraryModal');
+  const libraryClose = document.getElementById('cbzLibraryClose');
+  const libraryGrid = document.getElementById('cbzLibraryGrid');
+  const libraryEmpty = document.getElementById('cbzLibraryEmpty');
+  const btnLibrarySort = document.getElementById('cbzBtnLibrarySort');
+  const btnLibraryClear = document.getElementById('cbzBtnLibraryClear');
 
   let pages = [];
   let currentIndex = 0;
@@ -367,7 +470,16 @@
   function showError(msg){ errBox.textContent = msg; errBox.style.display = 'block'; }
   function clearError(){ errBox.style.display = 'none'; errBox.textContent = ''; }
 
-  async function processZipBuffer(buffer, displayName){
+  let currentLibraryId = null;
+  let autoAdvanceEnabled = true;
+  let autoAdvanceTriggered = false;
+  try {
+    const savedAuto = localStorage.getItem('cbzAutoAdvance');
+    if (savedAuto !== null) autoAdvanceEnabled = savedAuto === '1';
+  } catch (e) {}
+
+  async function processZipBuffer(buffer, displayName, opts){
+    opts = opts || {};
     viewMode = 'fit';
     fitMode = 'height';
     zoomPercent = 100;
@@ -401,6 +513,19 @@
     scrollMode = false; // força toggleScrollMode a ligar o modo rolagem abaixo
     applyScrollModeState(true);
     goToPage(0);
+
+    if (opts.fromLibrary) {
+      currentLibraryId = opts.libraryId;
+    } else {
+      try {
+        await saveToLibrary(buffer, displayName, pages.length);
+      } catch (e) {
+        console.warn('Não foi possível salvar na biblioteca (talvez falta de espaço no navegador):', e);
+        currentLibraryId = null;
+      }
+    }
+    autoAdvanceTriggered = false;
+    await refreshPlaylistButtons();
   }
 
   async function handleFile(file){
@@ -412,6 +537,7 @@
     }
     dropzone.classList.add('cbz-hidden');
     reader.classList.remove('cbz-hidden');
+    loadingText.textContent = 'Extraindo páginas…';
     loadingEl.classList.remove('cbz-hidden');
     try {
       const buffer = await file.arrayBuffer();
@@ -426,10 +552,379 @@
     }
   }
 
+  async function handleFiles(fileList){
+    const files = Array.from(fileList || []).filter(f => CBZ_NAME_RE.test(f.name));
+    if (files.length === 0) {
+      showError('Escolha arquivos compatíveis (.cbz ou .zip com imagens dentro).');
+      return;
+    }
+    if (files.length === 1) {
+      await handleFile(files[0]);
+      return;
+    }
+
+    clearError();
+    dropzone.classList.add('cbz-hidden');
+    reader.classList.remove('cbz-hidden');
+    loadingEl.classList.remove('cbz-hidden');
+
+    let firstId = null;
+    let failed = 0;
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      loadingText.textContent = 'Importando ' + (i + 1) + ' de ' + files.length + ': ' + file.name;
+      try {
+        const buffer = await file.arrayBuffer();
+        const extracted = await extractCoverAndCount(buffer);
+        const id = await saveBufferToLibrary(buffer, file.name, extracted.pageCount, extracted.coverBlob);
+        if (firstId === null) firstId = id;
+      } catch (e) {
+        console.warn('Falha ao importar ' + file.name + ':', e);
+        failed++;
+      }
+    }
+
+    loadingEl.classList.add('cbz-hidden');
+    await resortLibraryByName();
+    await updateLibraryButtonLabel();
+
+    if (firstId !== null) {
+      await openFromLibrary(firstId);
+    } else {
+      reader.classList.add('cbz-hidden');
+      dropzone.classList.remove('cbz-hidden');
+    }
+    if (failed > 0) {
+      showError(failed + ' de ' + files.length + ' arquivo(s) não puderam ser importados (formato inválido ou corrompido).');
+    }
+  }
+
   function revokeUrls(){
     objectUrls.forEach(u => URL.revokeObjectURL(u));
     objectUrls = [];
   }
+
+  // ========== Biblioteca (IndexedDB, só neste navegador) ==========
+  const DB_NAME = 'cbzReaderDB';
+  const DB_VERSION = 1;
+  const STORE = 'books';
+  let dbPromise = null;
+
+  function openDB(){
+    if (dbPromise) return dbPromise;
+    dbPromise = new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(STORE)) {
+          db.createObjectStore(STORE, { keyPath: 'id', autoIncrement: true });
+        }
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    return dbPromise;
+  }
+  async function dbAdd(book){
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE, 'readwrite');
+      const req = tx.objectStore(STORE).add(book);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+  async function dbPut(book){
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE, 'readwrite');
+      const req = tx.objectStore(STORE).put(book);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+  async function dbGet(id){
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE, 'readonly');
+      const req = tx.objectStore(STORE).get(id);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+  async function dbGetAll(){
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE, 'readonly');
+      const req = tx.objectStore(STORE).getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => reject(req.error);
+    });
+  }
+  async function dbDelete(id){
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE, 'readwrite');
+      const req = tx.objectStore(STORE).delete(id);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  function formatBytes(bytes){
+    if (!bytes) return '0 KB';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let i = 0, n = bytes;
+    while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }
+    return n.toFixed(i === 0 ? 0 : 1) + ' ' + units[i];
+  }
+
+  async function saveBufferToLibrary(buffer, name, pageCount, coverBlob){
+    const existing = await dbGetAll();
+    const dup = existing.find(b => b.name === name && b.size === buffer.byteLength);
+    if (dup) return dup.id;
+    const maxOrder = existing.reduce((m, b) => Math.max(m, b.order || 0), 0);
+    const id = await dbAdd({
+      name: name,
+      size: buffer.byteLength,
+      pageCount: pageCount,
+      addedAt: Date.now(),
+      order: maxOrder + 1,
+      cbzBlob: new Blob([buffer]),
+      coverBlob: coverBlob || null
+    });
+    return id;
+  }
+
+  async function saveToLibrary(buffer, name, pageCount){
+    let coverBlob = null;
+    if (pages[0]) {
+      try { coverBlob = await (await fetch(pages[0].url)).blob(); } catch (e) {}
+    }
+    const id = await saveBufferToLibrary(buffer, name, pageCount, coverBlob);
+    currentLibraryId = id;
+    if (!libraryModal.classList.contains('cbz-hidden')) renderLibrary();
+    await updateLibraryButtonLabel();
+  }
+
+  async function extractCoverAndCount(buffer){
+    const zip = await JSZip.loadAsync(buffer);
+    const entries = [];
+    zip.forEach((relPath, entry) => {
+      if (!entry.dir && IMAGE_RE.test(relPath) && !relPath.startsWith('__MACOSX')) entries.push(entry);
+    });
+    if (entries.length === 0) throw new Error('Nenhuma imagem encontrada dentro deste arquivo.');
+    entries.sort((a, b) => naturalCompare(a.name, b.name));
+    const coverBlob = await entries[0].async('blob');
+    return { pageCount: entries.length, coverBlob: coverBlob };
+  }
+
+  async function updateLibraryButtonLabel(){
+    try {
+      const list = await dbGetAll();
+      const label = 'Biblioteca' + (list.length ? ' (' + list.length + ')' : '');
+      btnLibrary.textContent = label;
+    } catch (e) {}
+  }
+
+  async function openFromLibrary(id){
+    clearError();
+    closeLibraryModal();
+    dropzone.classList.add('cbz-hidden');
+    reader.classList.remove('cbz-hidden');
+    loadingEl.classList.remove('cbz-hidden');
+    try {
+      const book = await dbGet(id);
+      if (!book) throw new Error('Este item não existe mais na biblioteca.');
+      const buffer = await book.cbzBlob.arrayBuffer();
+      await processZipBuffer(buffer, book.name, { fromLibrary: true, libraryId: id });
+    } catch (e) {
+      console.error(e);
+      reader.classList.add('cbz-hidden');
+      dropzone.classList.remove('cbz-hidden');
+      showError('Não foi possível abrir esse item da biblioteca: ' + (e.message || ''));
+    } finally {
+      loadingEl.classList.add('cbz-hidden');
+    }
+  }
+
+  async function reorderLibrary(draggedId, targetId){
+    const books = await dbGetAll();
+    books.sort((a, b) => (a.order || 0) - (b.order || 0));
+    const fromIdx = books.findIndex(b => b.id === draggedId);
+    const toIdx = books.findIndex(b => b.id === targetId);
+    if (fromIdx === -1 || toIdx === -1) return;
+    const [moved] = books.splice(fromIdx, 1);
+    books.splice(toIdx, 0, moved);
+    await Promise.all(books.map((b, i) => dbPut(Object.assign({}, b, { order: i }))));
+  }
+
+  async function resortLibraryByName(){
+    const books = await dbGetAll();
+    books.sort((a, b) => naturalCompare(a.name, b.name));
+    await Promise.all(books.map((b, i) => dbPut(Object.assign({}, b, { order: i }))));
+  }
+
+  async function clearLibrary(){
+    const books = await dbGetAll();
+    await Promise.all(books.map(b => dbDelete(b.id)));
+    currentLibraryId = null;
+  }
+
+  btnLibrarySort.addEventListener('click', async () => {
+    await resortLibraryByName();
+    renderLibrary();
+    refreshPlaylistButtons();
+  });
+  btnLibraryClear.addEventListener('click', async () => {
+    const ok = window.confirm('Remover todos os arquivos salvos da biblioteca? Isso não pode ser desfeito.');
+    if (!ok) return;
+    await clearLibrary();
+    renderLibrary();
+    updateLibraryButtonLabel();
+    refreshPlaylistButtons();
+  });
+
+  async function renderLibrary(){
+    const books = await dbGetAll();
+    books.sort((a, b) => (a.order || 0) - (b.order || 0));
+    libraryGrid.innerHTML = '';
+    libraryEmpty.classList.toggle('cbz-hidden', books.length > 0);
+
+    books.forEach((book, i) => {
+      const row = document.createElement('div');
+      row.className = 'cbz-library-row' + (book.id === currentLibraryId ? ' cbz-library-current' : '');
+      row.draggable = true;
+      row.dataset.id = book.id;
+
+      const idx = document.createElement('span');
+      idx.className = 'cbz-library-row-index';
+      idx.textContent = (i + 1) + '.';
+
+      const cover = document.createElement('img');
+      cover.className = 'cbz-library-row-cover';
+      cover.alt = book.name;
+      if (book.coverBlob) cover.src = URL.createObjectURL(book.coverBlob);
+
+      const info = document.createElement('div');
+      info.className = 'cbz-library-row-info';
+      const title = document.createElement('div');
+      title.className = 'cbz-library-row-title';
+      title.textContent = book.name;
+      const meta = document.createElement('div');
+      meta.className = 'cbz-library-row-meta';
+      meta.textContent = (book.pageCount || '?') + ' pág.  -  ' + formatBytes(book.size);
+      info.appendChild(title);
+      info.appendChild(meta);
+
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'cbz-library-row-remove';
+      removeBtn.title = 'Remover da biblioteca';
+      removeBtn.textContent = '\u00d7';
+      removeBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        await dbDelete(book.id);
+        if (currentLibraryId === book.id) currentLibraryId = null;
+        renderLibrary();
+        updateLibraryButtonLabel();
+        refreshPlaylistButtons();
+      });
+
+      const handle = document.createElement('span');
+      handle.className = 'cbz-library-row-handle';
+      handle.title = 'Arraste para reordenar';
+      handle.textContent = '\u2630';
+
+      row.appendChild(idx);
+      row.appendChild(cover);
+      row.appendChild(info);
+      row.appendChild(removeBtn);
+      row.appendChild(handle);
+      row.addEventListener('click', () => openFromLibrary(book.id));
+
+      row.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', String(book.id));
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      row.addEventListener('dragover', (e) => { e.preventDefault(); row.classList.add('cbz-dragover'); });
+      row.addEventListener('dragleave', () => row.classList.remove('cbz-dragover'));
+      row.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        row.classList.remove('cbz-dragover');
+        const draggedId = parseInt(e.dataTransfer.getData('text/plain'), 10);
+        if (!draggedId || draggedId === book.id) return;
+        await reorderLibrary(draggedId, book.id);
+        renderLibrary();
+        refreshPlaylistButtons();
+      });
+
+      libraryGrid.appendChild(row);
+    });
+  }
+
+  async function refreshPlaylistButtons(){
+    const books = await dbGetAll();
+    books.sort((a, b) => (a.order || 0) - (b.order || 0));
+    const idx = books.findIndex(b => b.id === currentLibraryId);
+    const hasPrev = idx > 0;
+    const hasNext = idx !== -1 && idx < books.length - 1;
+    btnPlaylistPrev.disabled = !hasPrev;
+    btnPlaylistNext.disabled = !hasNext;
+    btnPlaylistPrev.dataset.targetId = hasPrev ? books[idx - 1].id : '';
+    btnPlaylistNext.dataset.targetId = hasNext ? books[idx + 1].id : '';
+  }
+
+  async function tryAutoAdvance(){
+    if (!autoAdvanceEnabled || autoAdvanceTriggered) return;
+    const targetId = parseInt(btnPlaylistNext.dataset.targetId, 10);
+    if (!targetId) return;
+    autoAdvanceTriggered = true;
+    await openFromLibrary(targetId);
+  }
+
+  function updateAutoAdvanceButton(){
+    btnAutoAdvance.textContent = 'Auto: ' + (autoAdvanceEnabled ? 'ligado' : 'desligado');
+  }
+  btnAutoAdvance.addEventListener('click', () => {
+    autoAdvanceEnabled = !autoAdvanceEnabled;
+    try { localStorage.setItem('cbzAutoAdvance', autoAdvanceEnabled ? '1' : '0'); } catch (e) {}
+    updateAutoAdvanceButton();
+  });
+
+  // No modo de rolagem, detecta quando o leitor chega ao final da última página.
+  scrollStrip.addEventListener('scroll', () => {
+    if (!scrollMode || pages.length === 0) return;
+    const nearBottom = scrollStrip.scrollTop + scrollStrip.clientHeight >= scrollStrip.scrollHeight - 40;
+    if (nearBottom) tryAutoAdvance();
+  });
+
+  function openLibraryModal(){
+    renderLibrary();
+    libraryModal.classList.remove('cbz-hidden');
+  }
+  function closeLibraryModal(){
+    libraryModal.classList.add('cbz-hidden');
+  }
+
+  btnLibrary.addEventListener('click', openLibraryModal);
+  btnLibraryDz.addEventListener('click', openLibraryModal);
+  libraryClose.addEventListener('click', closeLibraryModal);
+  libraryModal.addEventListener('click', (e) => { if (e.target === libraryModal) closeLibraryModal(); });
+  btnPlaylistPrev.addEventListener('click', () => {
+    const id = parseInt(btnPlaylistPrev.dataset.targetId, 10);
+    if (id) openFromLibrary(id);
+  });
+  btnPlaylistNext.addEventListener('click', () => {
+    const id = parseInt(btnPlaylistNext.dataset.targetId, 10);
+    if (id) openFromLibrary(id);
+  });
+
+  if (navigator.storage && navigator.storage.persist) {
+    navigator.storage.persist().catch(() => {});
+  }
+  updateLibraryButtonLabel();
+  updateAutoAdvanceButton();
+  // ========== Fim: Biblioteca ==========
 
   function buildThumbs(){
     thumbsEl.innerHTML = '';
@@ -506,7 +1001,10 @@
     }
   }
 
-  function nextPage(){ goToPage(currentIndex + 1); }
+  function nextPage(){
+    if (currentIndex >= pages.length - 1) { tryAutoAdvance(); return; }
+    goToPage(currentIndex + 1);
+  }
   function prevPage(){ goToPage(currentIndex - 1); }
 
   function toggleFit(){
@@ -627,6 +1125,7 @@
     scrollStrip.innerHTML = '';
     pages = [];
     currentIndex = 0;
+    currentLibraryId = null;
     viewMode = 'fit'; fitMode = 'height'; zoomPercent = 100;
     reader.classList.add('cbz-hidden');
     dropzone.classList.remove('cbz-hidden');
@@ -660,7 +1159,7 @@
     wasFullscreenBeforePicker = !!(document.fullscreenElement || document.webkitFullscreenElement);
   });
   fileInput.addEventListener('change', (e) => {
-    handleFile(e.target.files[0]);
+    handleFiles(e.target.files);
     // O navegador costuma sair da tela cheia sozinho ao abrir o seletor
     // nativo de arquivos. Se estávamos em tela cheia antes, volta pra ela.
     if (wasFullscreenBeforePicker && !(document.fullscreenElement || document.webkitFullscreenElement)) {
@@ -675,14 +1174,13 @@
   ['dragleave', 'drop'].forEach(evt => {
     dzInner.addEventListener(evt, (e) => { e.preventDefault(); e.stopPropagation(); dzInner.classList.remove('cbz-drag'); });
   });
-  dzInner.addEventListener('drop', (e) => handleFile(e.dataTransfer.files[0]));
+  dzInner.addEventListener('drop', (e) => handleFiles(e.dataTransfer.files));
 
   appRoot.addEventListener('dragover', (e) => e.preventDefault());
   appRoot.addEventListener('drop', (e) => {
     if (e.target.closest('#cbzDzInner')) return;
     e.preventDefault();
-    const file = e.dataTransfer.files && e.dataTransfer.files[0];
-    if (file) handleFile(file);
+    if (e.dataTransfer.files && e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
   });
 
   btnPrev.addEventListener('click', prevPage);
@@ -700,6 +1198,7 @@
   pageArea.addEventListener('dblclick', toggleFullscreen);
 
   document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !libraryModal.classList.contains('cbz-hidden')) { closeLibraryModal(); return; }
     if (reader.classList.contains('cbz-hidden')) return;
     if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextPage(); }
     else if (e.key === 'ArrowLeft') { e.preventDefault(); prevPage(); }
